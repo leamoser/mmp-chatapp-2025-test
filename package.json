@@ -7,8 +7,9 @@
     "start": "nodemon server.js"
   },
   "dependencies": {
-    "better-sqlite3": "^12.4.6",
+    "dotenv": "^17.2.3",
     "express": "^4.21.2",
+    "pg": "^8.16.3",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

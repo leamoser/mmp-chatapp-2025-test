@@ -1,7 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import Database from 'better-sqlite3';
+import pg from 'pg';
 
 // -> express
 const app = express();
@@ -13,40 +14,42 @@ const io = new Server(server, {
     connectionStateRecovery: {}
 });
 
-// -> beter sqlite
-const db = new Database('chat.db');
-db.exec(`
+// -> postgres
+const connectionString = process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/chat_db';
+const pool = new pg.Pool({
+    connectionString,
+    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
+});
+pool.query(`
   CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       msg TEXT,
       username TEXT
   );
-`);
+`).catch(err => console.error('🛑 Error creating table', err));
 
 // -> socket.io events
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     console.log('🟢 a user connected');
     if (!socket.recovered) {
         try {
-            const stmt = db.prepare('SELECT id, msg, username FROM messages WHERE id > ?');
-            const rows = stmt.all(socket.handshake.auth.serverOffset || 0);
-            rows.forEach((row) => {
+            const result = await pool.query('SELECT id, msg, username FROM messages WHERE id > $1', [socket.handshake.auth.serverOffset || 0]);
+            result.rows.forEach((row) => {
                 socket.emit('broadcast_chat', row.msg, row.username, row.id);
             });
         } catch (e) {
             console.error('🧑🏽‍💻 error on reading old messages from database', e);
         }
     }
-    socket.on('send_chat', (msg, username) => {
-        let result;
+    socket.on('send_chat', async (msg, username) => {
         try {
-            const stmt = db.prepare('INSERT INTO messages (msg, username) VALUES (?, ?)');
-            result = stmt.run(msg, username);
+            const text = 'INSERT INTO messages (msg, username) VALUES ($1, $2) RETURNING id';
+            const values = [msg, username];
+            const res = await pool.query(text, values);
+            io.emit('broadcast_chat', msg, username, res.rows[0].id);
         } catch (e) {
             console.error('🧑🏽‍💻 error on inserting message into database', e);
-            return;
         }
-        io.emit('broadcast_chat', msg, username, result.lastInsertRowid);
     });
     socket.on('disconnect', () => {
         console.log('🔴 user disconnected');
