@@ -5,7 +5,7 @@ import { Server } from 'socket.io';
 // -> express
 const app = express();
 const server = createServer(app);
-app.use(express.static("public"));
+app.use(express.static('public'));
 
 // -> socket.io
 const io = new Server(server, {
