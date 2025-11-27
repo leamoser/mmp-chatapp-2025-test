@@ -8,7 +8,9 @@ const server = createServer(app);
 app.use(express.static("public"));
 
 // -> socket.io
-const io = new Server(server);
+const io = new Server(server, {
+    connectionStateRecovery: {}
+});
 
 // -> socket.io events
 io.on('connection', (socket) => {

@@ -14,6 +14,7 @@ form.addEventListener('submit', (e) => {
     }
 });
 
+// -> socket.io events
 socket.on('broadcast_chat', (msg, username) => {
     const item = document.createElement('li');
     item.innerHTML = `<span class="name">${username}</span>${msg}`
