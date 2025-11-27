@@ -16,6 +16,10 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('user disconnected');
     });
+    socket.on('send_chat', (msg, username) => {
+        console.log('📩 ' + msg);
+        io.emit('broadcast_chat', msg, username);
+    });
 });
 
 // -> routing
