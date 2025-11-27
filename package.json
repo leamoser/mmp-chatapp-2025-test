@@ -1,0 +1,9 @@
+{
+  "name": "socketio-chat",
+  "version": "0.0.1",
+  "description": "mmp major chat app",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
